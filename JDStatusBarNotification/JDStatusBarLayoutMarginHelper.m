@@ -10,7 +10,8 @@
 
 UIEdgeInsets JDStatusBarRootVCLayoutMargin(void)
 {
-  UIEdgeInsets layoutMargins = [[[[[UIApplication sharedApplication] keyWindow] rootViewController] view] layoutMargins];
+//  UIEdgeInsets layoutMargins = [[[[[UIApplication sharedApplication] keyWindow] rootViewController] view] layoutMargins];
+    UIEdgeInsets layoutMargins = [[[[[UIApplication sharedApplication] delegate].window rootViewController] view] layoutMargins];
   if (layoutMargins.top > 8 && layoutMargins.bottom > 8) {
     return layoutMargins;
   } else {

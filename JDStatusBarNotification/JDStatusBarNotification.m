@@ -146,8 +146,8 @@
     [self setupDefaultStyles];
 
     // register for orientation changes
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(willChangeStatusBarFrame:)
-                                                 name:UIApplicationWillChangeStatusBarFrameNotification object:nil];
+  //  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(willChangeStatusBarFrame:)
+    //                                             name:UIApplicationWillChangeStatusBarFrameNotification object:nil];
   }
   return self;
 }
@@ -198,7 +198,7 @@
                     style:(JDStatusBarStyle*)style;
 {
   // first, check if status bar is visible at all
-  if ([UIApplication sharedApplication].statusBarHidden) return nil;
+  //if ([UIApplication sharedApplication].statusBarHidden) return nil;
 
   // prepare for new style
   if (style != self.activeStyle) {
@@ -214,7 +214,7 @@
 
   // Force update the TopBar frame if the height is 0
   if (self.topBar.frame.size.height == 0) {
-    [self updateContentFrame:[[UIApplication sharedApplication] statusBarFrame]];
+      [self updateContentFrame:([UIApplication sharedApplication].windows.firstObject.windowScene.statusBarManager.statusBarFrame)];
   }
 
   // cancel previous dismissing & remove animations
@@ -406,10 +406,17 @@
     frame.origin.y = barHeight;
   } else if(self.activeStyle.progressBarPosition == JDStatusBarProgressBarPositionNavBar) {
     CGFloat navBarHeight = 44.0;
-    if (([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) &&
-        UIInterfaceOrientationIsLandscape([[UIApplication sharedApplication] statusBarOrientation])) {
-      navBarHeight = 32.0;
-    }
+//    if (([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) &&
+//        UIInterfaceOrientationIsLandscape([[UIApplication sharedApplication] statusBarOrientation])) {
+      if (@available(iOS 13.0, *)) {
+          if (([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) &&
+              ([(UIWindowScene *)[[[UIApplication sharedApplication] windows] firstObject] interfaceOrientation] ?: UIInterfaceOrientationPortrait)) {
+              
+              navBarHeight = 32.0;
+          }
+      } else {
+          navBarHeight = 32.0;
+      }
     frame.origin.y = barHeight + navBarHeight;
   }
 
@@ -461,7 +468,7 @@
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < 70000 // only when deployment target is < ios7
     _overlayWindow.rootViewController.wantsFullScreenLayout = YES;
 #endif
-    [self updateContentFrame:[[UIApplication sharedApplication] statusBarFrame]];
+      [self updateContentFrame:([UIApplication sharedApplication].windows.firstObject.windowScene.statusBarManager.statusBarFrame)];
   }
   return _overlayWindow;
 }
@@ -537,25 +544,25 @@ static CGFloat topBarHeightAdjustedForIphoneX(JDStatusBarStyle *style, CGFloat h
   _topBar.frame = CGRectMake(0, yPos, width, height);
 }
 
-- (void)willChangeStatusBarFrame:(NSNotification*)notification;
-{
-  CGRect newBarFrame = [notification.userInfo[UIApplicationStatusBarFrameUserInfoKey] CGRectValue];
-  NSTimeInterval duration = [[UIApplication sharedApplication] statusBarOrientationAnimationDuration];
-
-  // update window & statusbar
-  void(^updateBlock)(void) = ^{
-    [self updateContentFrame:newBarFrame];
-    self.progress = self.progress; // relayout progress bar
-  };
-
-  [UIView animateWithDuration:duration animations:^{
-    updateBlock();
-  } completion:^(BOOL finished) {
-    // this hack fixes a broken frame after the rotation (#35)
-    // but rotation animation is still broken
-    updateBlock();
-  }];
-}
+//- (void)willChangeStatusBarFrame:(NSNotification*)notification;
+//{
+//  CGRect newBarFrame = [notification.userInfo[UIApplicationStatusBarFrameUserInfoKey] CGRectValue];
+//  NSTimeInterval duration = [[UIApplication sharedApplication] statusBarOrientationAnimationDuration];
+//
+//  // update window & statusbar
+//  void(^updateBlock)(void) = ^{
+//    [self updateContentFrame:newBarFrame];
+//    self.progress = self.progress; // relayout progress bar
+//  };
+//
+//  [UIView animateWithDuration:duration animations:^{
+//    updateBlock();
+//  } completion:^(BOOL finished) {
+//    // this hack fixes a broken frame after the rotation (#35)
+//    // but rotation animation is still broken
+//    updateBlock();
+//  }];
+//}
 
 @end
 
@@ -576,9 +583,9 @@ static CGFloat topBarHeightAdjustedForIphoneX(JDStatusBarStyle *style, CGFloat h
   return topController;
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
-  return [[self mainController] shouldAutorotateToInterfaceOrientation:toInterfaceOrientation];
-}
+//- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
+//  return [[self mainController] shouldAutorotateToInterfaceOrientation:toInterfaceOrientation];
+//}
 
 - (BOOL)shouldAutorotate {
   return [[self mainController] shouldAutorotate];
@@ -615,8 +622,7 @@ static BOOL JDUIViewControllerBasedStatusBarAppearanceEnabled() {
   if(JDUIViewControllerBasedStatusBarAppearanceEnabled()) {
     return [[self mainController] preferredStatusBarStyle];
   }
-
-  return [[UIApplication sharedApplication] statusBarStyle];
+    return ([UIApplication sharedApplication].windows.firstObject.windowScene.statusBarManager.statusBarStyle);
 }
 
 - (BOOL)prefersStatusBarHidden {
